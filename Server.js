@@ -89,19 +89,16 @@ app.delete('/users/:id', (req, res) => {
   const { id } = req.params;
 
   const query = 'DELETE FROM users WHERE id = ?';
-  db.run(query, [name, email, id], function (err) {
+  db.run(query, [id], function (err) {
     if (err) return res.status(500).json({ erro: err.message });
-  
+
     if (this.changes === 0) {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
-  
-    res.json({ id, name, email });
+
+    // OK, usuário deletado
+    res.json({ message: 'Usuário removido com sucesso.' });
   });
-  
-  
-  users = users.filter(user => user.id !== id);
-  res.status(200).send();
 });
 
 // Inicializa o servidor
