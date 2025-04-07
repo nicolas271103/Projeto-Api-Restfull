@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerenciar Usuários</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="card">
+    <h2>Cadastrar Usuários</h2>
+    <input type="text" id="name" placeholder="Nome" />
+    <input type="email" id="email" placeholder="E-mail" />
+    <button onclick="addUser()">Cadastrar</button>
+    <div class="message" id="createMessage"></div>
+
+    <h2>Usuários Cadastrados</h2>
+    <ul id="userList"></ul>
+
+    <h2>Atualizar Usuário</h2>
+    <input type="text" id="updateId" placeholder="ID do usuário" readonly>
+    <input type="text" id="updateName" placeholder="Novo nome">
+    <input type="email" id="updateEmail" placeholder="Novo e-mail">
+    <button class="update-btn" onclick="putUser()">Atualizar</button>
+    <div class="message" id="updateMessage"></div>
+  </div>
+
+  <script>
+    async function fetchUsers() {
+      const response = await fetch('http://localhost:8000/api/users');
+      const users = await response.json();
+      const userList = document.getElementById('userList');
+      userList.innerHTML = '';
+
+      users.forEach(user => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <strong>${user.name}</strong> (${user.email})<br>
+          <small>ID: ${user.id}</small><br>
+          <button class="edit-btn" onclick='fillForm("${user.id}", "${user.name}", "${user.email}")'>Editar</button>
+          <button class="delete-btn" onclick='deleteUser("${user.id}")'>Excluir</button>
+        `;
+        userList.appendChild(li);
+      });
+    }
+
+    function fillForm(id, name, email) {
+      document.getElementById('updateId').value = id;
+      document.getElementById('updateName').value = name;
+      document.getElementById('updateEmail').value = email;
+      document.getElementById('updateMessage').textContent = '';
+    }
+
+    function showMessage(el, text, type = 'success') {
+      el.textContent = text;
+      el.className = `message show ${type}`;
+      setTimeout(() => {
+        el.classList.remove('show');
+      }, 3000);
+    }
+
+    async function addUser() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const messageEl = document.getElementById('createMessage');
+
+      if (!name || !email) {
+        showMessage(messageEl, 'Preencha todos os campos!', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:8000/api/users');
+        const users = await response.json();
+
+        const emailInUse = users.some(user => user.email === email);
+
+        if (emailInUse) {
+          showMessage(messageEl, 'E-mail já cadastrado!', 'error');
+          return;
+        }
+
+        await fetch('http://localhost:8000/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email })
+        });
+
+        showMessage(messageEl, 'Usuário cadastrado com sucesso!', 'success');
+
+        document.getElementById('name').value = '';
+        document.getElementById('email').value = '';
+        fetchUsers();
+      } catch (error) {
+        showMessage(messageEl, 'Erro ao cadastrar usuário.', 'error');
+      }
+    }
+
+    async function putUser() {
+      const id = document.getElementById('updateId').value.trim();
+      const name = document.getElementById('updateName').value.trim();
+      const email = document.getElementById('updateEmail').value.trim();
+      const messageEl = document.getElementById('updateMessage');
+
+      if (!id || !name || !email) {
+        showMessage(messageEl, 'Preencha todos os campos!', 'error');
+        return;
+      }
+
+      try {
+        const usersResponse = await fetch('http://localhost:8000/api/users');
+        const users = await usersResponse.json();
+
+        const emailInUse = users.some(user => user.email === email && user.id !== id);
+
+        if (emailInUse) {
+          showMessage(messageEl, 'E-mail já está sendo usado por outro usuário.', 'error');
+          return;
+        }
+
+        const response = await fetch(`http://localhost:8000/api/users/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage(messageEl, 'Usuário atualizado com sucesso!', 'success');
+          fetchUsers();
+        } else {
+          showMessage(messageEl, `Erro: ${data.message}`, 'error');
+        }
+      } catch (error) {
+        showMessage(messageEl, 'Erro de conexão com o servidor.', 'error');
+      }
+    }
+
+    async function deleteUser(id) {
+  if (!confirm('Deseja mesmo excluir este usuário?')) return;
+
+  try {
+    const response = await fetch(`http://localhost:8000/api/users/${id}`, {
+      method: 'DELETE'
+    });
+
+    if (response.ok) {
+      showMessage(document.getElementById('updateMessage'), 'Usuário excluído com sucesso!');
+      fetchUsers();
+    } else {
+      showMessage(document.getElementById('updateMessage'), 'Erro ao excluir usuário.');
+    }
+  } catch (error) {
+    showMessage(document.getElementById('updateMessage'), 'Erro de conexão ao tentar excluir.');
+  }
+}
+
+  
+
+    fetchUsers();
+  </script>
+</body>
+</html>
