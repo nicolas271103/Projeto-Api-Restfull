@@ -8,3 +8,8 @@ yarn-error.log
 
 .Ds_Store
 Thambs.db
+
+# Arquivos de banco de dados
+*.db
+database.db
+users.db

@@ -115,7 +115,7 @@ A interface foi construída com HTML + JS e consome os endpoints da API diretame
 npm install
 
 # Inicialize o servidor
-node index.js
+node Server.js
 ```
 
 Para ter acesso a interface HTML via navegador abra o arquivo `index.html`.
